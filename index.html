@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>مشاور هوشمند کنکور | Telegram Universal AI Mini App</title>
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Google Font: Vazirmatn -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Vazirmatn', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            tgPrimary: 'var(--tg-theme-button-color, #2563eb)',
+            tgText: 'var(--tg-theme-text-color, #f8fafc)',
+            tgBg: 'var(--tg-theme-bg-color, #0f172a)',
+            tgCard: 'var(--tg-theme-secondary-bg-color, #1e293b)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    input, textarea, select {
+      user-select: text;
+    }
+
+    body {
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #020617; /* Slate-950 */
+      color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      height: 100dvh;
+      overflow: hidden;
+      direction: rtl;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 999px;
+    }
+
+    /* Toast Container */
+    .toast-container {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      width: 90%;
+      max-width: 420px;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast-item {
+      pointer-events: auto;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      color: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Custom Checkbox */
+    .plan-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #64748b;
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .plan-checkbox:checked {
+      background-color: #10b981;
+      border-color: #10b981;
+    }
+    .plan-checkbox:checked::after {
+      content: '✓';
+      position: absolute;
+      color: white;
+      font-size: 13px;
+      font-weight: 800;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Spinner */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .spin-loader {
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* Pulsing Badge */
+    @keyframes pulseLive {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.92); }
+    }
+    .live-pulse {
+      animation: pulseLive 1.8s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 flex items-center justify-center">
+
+  <!-- Desktop Mobile Frame Container -->
+  <div class="w-full max-w-[480px] mx-auto h-[100dvh] flex flex-col bg-slate-900 shadow-2xl relative overflow-hidden border-x border-slate-800">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Fixed App Header -->
+    <header class="shrink-0 bg-slate-900/95 backdrop-blur border-b border-slate-800 px-4 py-3 z-30 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+            <span>مشاور تحصیلی هوشمند</span>
+            <span id="headerProviderBadge" class="text-[9px] bg-blue-500/20 text-blue-400 font-mono px-1.5 py-0.5 rounded border border-blue-500/30">Gemini</span>
+          </h1>
+          <p id="headerSubtitle" class="text-[11px] text-slate-400 font-medium truncate max-w-[210px]">آماده ثبت و تحلیل گزارش</p>
+        </div>
+      </div>
+
+      <!-- Header Status Indicators -->
+      <div class="flex items-center gap-1.5">
+        <div id="liveBotHeaderBadge" class="hidden items-center gap-1 text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 live-pulse"></span>
+          <span>ربات فعال</span>
+        </div>
+        <div id="cloudBadge" class="flex items-center gap-1 text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+          <span id="cloudBadgeText">Cloud</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scrollable Main Content Area -->
+    <main class="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+
+      <!-- ==================== TAB 1: REPORT & ANALYSIS ==================== -->
+      <section id="tab-report" class="tab-pane space-y-3.5">
+        
+        <!-- Today Banner -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-3.5 flex items-center justify-between">
+          <div class="space-y-0.5">
+            <span class="text-[11px] text-slate-400 block">گزارش روزانه</span>
+            <span id="dateDisplay" class="text-xs font-bold text-slate-100">امروز</span>
+          </div>
+          <button id="btnSampleFill" class="text-[11px] text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 border border-cyan-800/50 px-2.5 py-1 rounded-lg">
+            نمونه گزارش آماده
+          </button>
+        </div>
+
+        <!-- Structured Quick Metric Inputs -->
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-3 shadow-lg">
+          <div class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+            <span>ورود سریع متریک‌های مطالعه امروز</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5 text-xs">
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">درس اصلی</label>
+              <input id="inputSubject" type="text" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 text-xs focus:border-blue-500 outline-none" placeholder="مثلاً: زیست‌شناسی">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">مبحث دقیق</label>
+              <input id="inputTopic" type="text" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 text-xs focus:border-blue-500 outline-none" placeholder="مثلاً: قلب و گردش مواد">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 text-center text-xs">
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">ساعت مطالعه</label>
+              <input id="inputHours" type="number" step="0.25" min="0" max="24" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl py-2 px-1 text-center font-mono text-xs focus:border-blue-500 outline-none" placeholder="4.5">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">تست کل</label>
+              <input id="inputTotalTests" type="number" min="0" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl py-2 px-1 text-center font-mono text-xs focus:border-blue-500 outline-none" placeholder="60">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">تست درست</label>
+              <input id="inputCorrectTests" type="number" min="0" class="w-full bg-slate-900 border border-slate-700 text-emerald-400 rounded-xl py-2 px-1 text-center font-mono text-xs focus:border-blue-500 outline-none" placeholder="45">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">تست غلط</label>
+              <input id="inputWrongTests" type="number" min="0" class="w-full bg-slate-900 border border-slate-700 text-rose-400 rounded-xl py-2 px-1 text-center font-mono text-xs focus:border-blue-500 outline-none" placeholder="10">
+            </div>
+          </div>
+
+          <!-- Natural Text Details -->
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">شرح جزئیات مطالعه، چالش‌ها و کیفیت یادگیری (اختیاری)</label>
+            <textarea id="inputReportText" rows="3" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl p-2.5 text-xs focus:border-blue-500 outline-none resize-none leading-relaxed" placeholder="توضیح دهید کجا گیر کردید، علت غلط‌ها چی بود و آیا تست‌ها زماندار بودند یا آموزشی..."></textarea>
+          </div>
+
+          <!-- Analyze Action Button -->
+          <button id="btnAnalyze" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 hover:opacity-95 text-white font-semibold rounded-xl py-3 px-4 text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition active:scale-[0.98]">
+            <svg id="btnAnalyzeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+            <span id="btnAnalyzeText">ثبت و تحلیل علمی با هوش مصنوعی</span>
+          </button>
+        </div>
+
+        <!-- Analysis Results Card (Hidden until generated) -->
+        <div id="analysisCard" class="hidden space-y-3">
+          
+          <!-- Key Metrics Badges -->
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-2.5">
+              <span class="text-[10px] text-slate-400 block">ساعت ثبت شده</span>
+              <span id="resultHours" class="text-base font-bold text-cyan-400 font-mono">0</span>
+            </div>
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-2.5">
+              <span class="text-[10px] text-slate-400 block">تعداد کل تست</span>
+              <span id="resultTests" class="text-base font-bold text-purple-400 font-mono">0</span>
+            </div>
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-2.5">
+              <span class="text-[10px] text-slate-400 block">درصد پاسخگویی</span>
+              <span id="resultAccuracy" class="text-base font-bold text-emerald-400 font-mono">0%</span>
+            </div>
+          </div>
+
+          <!-- AI Scientific Critique Box -->
+          <div class="bg-slate-800/95 border-r-4 border-r-cyan-500 border border-slate-700 rounded-2xl p-4 space-y-3.5 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-700/80 pb-2.5">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-slate-100">
+                <span class="text-base">🧬</span>
+                <span>تحلیل صریح مشاور تحصیلی کنکور</span>
+              </div>
+              <span class="text-[9px] bg-slate-900 text-slate-300 font-mono px-2 py-0.5 rounded border border-slate-700">علمی و بدون تعارف</span>
+            </div>
+
+            <!-- Reading speed & pacing -->
+            <div class="space-y-1">
+              <span class="text-[11px] font-bold text-blue-400 flex items-center gap-1">
+                <span>⚡</span> ارزیابی سرعت و کندخوانی:
+              </span>
+              <p id="analysisSpeed" class="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-2.5 rounded-xl border border-slate-800"></p>
+            </div>
+
+            <!-- Theory vs Test balance -->
+            <div class="space-y-1">
+              <span class="text-[11px] font-bold text-purple-400 flex items-center gap-1">
+                <span>⚖️</span> تعادل تئوری و تست‌زنی (Active Recall):
+              </span>
+              <p id="analysisBalance" class="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-2.5 rounded-xl border border-slate-800"></p>
+            </div>
+
+            <!-- Overall Critique -->
+            <div class="space-y-1">
+              <span class="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                <span>🔍</span> نقد عملکرد و ریشه‌یابی خطاها:
+              </span>
+              <p id="analysisOverall" class="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-2.5 rounded-xl border border-slate-800"></p>
+            </div>
+
+            <!-- 3 Actionable Fixes -->
+            <div class="space-y-2 border-t border-slate-700/80 pt-2.5">
+              <span class="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
+                <span>🎯</span> ۳ اقدام اصلاحی ضروری برای فردا:
+              </span>
+              <ul id="analysisActions" class="space-y-1.5 text-xs"></ul>
+            </div>
+
+            <!-- Direct Bot Send Button -->
+            <div class="pt-2 border-t border-slate-700/80 flex gap-2">
+              <button id="btnSendReportToBot" class="flex-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/40 rounded-xl py-2 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+                <span>📩</span>
+                <span>ارسال تحلیل به پیوی ربات تلگرام</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- ==================== TAB 2: STUDY PLANNER ==================== -->
+      <section id="tab-planner" class="tab-pane hidden space-y-3.5">
+        
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-3 shadow-lg">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xs font-bold text-slate-100">برنامه‌ریزی هوشمند روزانه</h2>
+              <p class="text-[10px] text-slate-400 mt-0.5">منحنی ابینگهاوس + پوشش نقاط ضعف</p>
+            </div>
+            <button id="btnGeneratePlan" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 text-white rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5 shadow transition">
+              <svg id="btnPlanIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+              </svg>
+              <span id="btnPlanText">صدور برنامه فردا</span>
+            </button>
+          </div>
+
+          <!-- Strategy Box -->
+          <div id="plannerStrategyBox" class="hidden bg-indigo-950/40 border border-indigo-800/50 p-2.5 rounded-xl text-xs text-indigo-300 leading-relaxed"></div>
+
+          <!-- Progress Bar -->
+          <div class="space-y-1 pt-1 border-t border-slate-700/60">
+            <div class="flex justify-between text-[11px]">
+              <span class="text-slate-400">پیشرفت چک‌لیست:</span>
+              <span id="plannerProgressText" class="font-bold text-cyan-400 font-mono">0% (0/0)</span>
+            </div>
+            <div class="h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700">
+              <div id="plannerProgressBar" class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Checklist Container -->
+        <div id="plannerTasksList" class="space-y-2">
+          <div id="plannerEmpty" class="bg-slate-800/40 border border-slate-800 rounded-2xl p-6 text-center space-y-2">
+            <div class="text-2xl">📋</div>
+            <p class="text-xs text-slate-400">برنامه‌ای صادر نشده است. دکمه «صدور برنامه فردا» را بزنید تا هوش مصنوعی طبق وضعیت درسی شما باکس‌های مطالعاتی را تنظیم کند.</p>
+          </div>
+        </div>
+
+        <!-- Custom Task Adder -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-2.5 flex gap-2">
+          <input id="inputManualTask" type="text" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 outline-none focus:border-blue-500" placeholder="افزودن تسک دلخواه دستی...">
+          <button id="btnManualTaskAdd" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition font-medium">
+            + افزودن
+          </button>
+        </div>
+
+        <!-- Send Planner to Bot -->
+        <button id="btnSendPlanToBot" class="w-full bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 rounded-xl py-2.5 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+          <span>📩</span>
+          <span>ارسال برنامه روز به پیوی ربات تلگرام</span>
+        </button>
+
+      </section>
+
+
+      <!-- ==================== TAB 3: ANALYTICS & HISTORY ==================== -->
+      <section id="tab-analytics" class="tab-pane hidden space-y-3.5">
+        
+        <!-- Summary Stat Cards -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-3.5 space-y-1">
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span>مجموع ساعت مطالعه</span>
+              <span>⏱️</span>
+            </div>
+            <div id="statTotalHours" class="text-xl font-bold text-cyan-400 font-mono">0 <span class="text-xs font-normal text-slate-400">ساعت</span></div>
+            <div id="statAvgHours" class="text-[10px] text-slate-400">میانگین روزانه: 0</div>
+          </div>
+
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-3.5 space-y-1">
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span>مجموع کل تست‌ها</span>
+              <span>🎯</span>
+            </div>
+            <div id="statTotalTests" class="text-xl font-bold text-purple-400 font-mono">0 <span class="text-xs font-normal text-slate-400">تست</span></div>
+            <div id="statAvgTests" class="text-[10px] text-slate-400">میانگین روزانه: 0</div>
+          </div>
+
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-3.5 space-y-1">
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span>میانگین درصد پاسخ</span>
+              <span>📊</span>
+            </div>
+            <div id="statAvgAccuracy" class="text-xl font-bold text-emerald-400 font-mono">0%</div>
+            <div class="text-[10px] text-slate-400">دقت تست‌زنی</div>
+          </div>
+
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-3.5 space-y-1">
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span>زنجیره استمرار</span>
+              <span>🔥</span>
+            </div>
+            <div id="statStreak" class="text-xl font-bold text-amber-400 font-mono">0 <span class="text-xs font-normal text-slate-400">روز</span></div>
+            <div class="text-[10px] text-slate-400">روزهای ثبت مداوم</div>
+          </div>
+        </div>
+
+        <!-- Visual Bar Chart -->
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-2.5">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-slate-200">نمودار مطالعه ۷ روز گذشته</span>
+            <span class="text-[10px] text-slate-400 font-mono">بر حسب ساعت</span>
+          </div>
+          <div id="chartBars" class="h-36 flex items-end justify-between gap-2 pt-6 pb-1 border-b border-slate-700"></div>
+          <div id="chartLabels" class="flex justify-between text-[10px] text-slate-400 font-mono"></div>
+        </div>
+
+        <!-- History Records List -->
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-200">تاریخچه گزارش‌های ثبت‌شده</h3>
+            <span id="historyCountBadge" class="text-[10px] bg-slate-900 text-slate-400 px-2 py-0.5 rounded font-mono">0 مورد</span>
+          </div>
+          <div id="historyContainer" class="space-y-2 text-xs"></div>
+        </div>
+
+      </section>
+
+
+      <!-- ==================== TAB 4: COMPREHENSIVE SETTINGS ==================== -->
+      <section id="tab-settings" class="tab-pane hidden space-y-3.5">
+        
+        <!-- Universal AI Provider Config Box -->
+        <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-4 space-y-3 shadow-lg">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-700">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-100">
+              <span class="text-base">🌐</span>
+              <span>تنظیمات هوش مصنوعی (Universal AI)</span>
+            </div>
+            <span class="text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800/50 px-2 py-0.5 rounded">BYOK</span>
+          </div>
+
+          <!-- Provider Preset Dropdown -->
+          <div>
+            <label class="text-[11px] text-slate-300 font-medium block mb-1">سرویس‌دهنده هوش مصنوعی (Provider)</label>
+            <select id="selectProvider" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 text-xs focus:border-blue-500 outline-none">
+              <option value="gemini">Google Gemini (رسمی گوگل)</option>
+              <option value="openai">OpenAI (ChatGPT)</option>
+              <option value="openrouter">OpenRouter (Claude, Llama, DeepSeek و...)</option>
+              <option value="deepseek">DeepSeek (هوش مصنوعی عمیق و ارزان)</option>
+              <option value="groq">Groq (سرعت فوق‌العاده بالا Llama-3)</option>
+              <option value="custom">Custom (سفارشی - سازگار با فرمت OpenAI)</option>
+            </select>
+          </div>
+
+          <!-- Base URL Input (LTR) -->
+          <div>
+            <label class="text-[11px] text-slate-300 font-medium block mb-1">آدرس سرور API (Base URL)</label>
+            <input id="inputBaseUrl" type="text" dir="ltr" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-left font-mono rounded-xl px-3 py-2 text-xs focus:border-blue-500 outline-none" placeholder="https://generativelanguage.googleapis.com/v1beta">
+          </div>
+
+          <!-- API Key Input (LTR) -->
+          <div>
+            <label class="text-[11px] text-slate-300 font-medium block mb-1">کلید اختصاصی (API Key)</label>
+            <div class="relative">
+              <input id="inputApiKey" type="password" dir="ltr" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-left font-mono rounded-xl pr-3 pl-10 py-2 text-xs focus:border-blue-500 outline-none" placeholder="sk-..., AIzaSy...">
+              <button id="btnToggleApiKey" type="button" class="absolute left-2.5 top-2 text-slate-400 hover:text-white p-0.5 text-xs">
+                👁️
+              </button>
+            </div>
+          </div>
+
+          <!-- Model Name & Fetch Models Action -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] text-slate-300 font-medium">نام مدل (Model Name)</label>
+              <button id="btnFetchModels" class="text-[11px] text-cyan-400 hover:underline flex items-center gap-1">
+                <span>🔄 استعلام خودکار مدل‌ها</span>
+              </button>
+            </div>
+            
+            <input id="inputModelName" type="text" dir="ltr" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-left font-mono rounded-xl px-3 py-2 text-xs focus:border-blue-500 outline-none" placeholder="gemini-2.5-flash">
+            
+            <!-- Fetched Models Dropdown (Hidden until fetched) -->
+            <select id="selectFetchedModel" class="hidden w-full bg-slate-900 border border-cyan-700/60 text-cyan-300 font-mono rounded-xl px-3 py-2 text-xs outline-none">
+              <option value="">-- انتخاب از مدل‌های فعال استعلام‌شده --</option>
+            </select>
+          </div>
+
+          <!-- Test & Save Buttons -->
+          <div class="flex gap-2 pt-1">
+            <button id="btnTestAI" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-xl py-2 px-3 text-xs font-medium transition">
+              ⚡ تست اتصال هوش مصنوعی
+            </button>
+            <button id="btnSaveAI" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-2 px-3 text-xs font-semibold shadow transition">
+              💾 ذخیره تنظیمات AI
+            </button>
+          </div>
+        </div>
+
+        <!-- Dual Bot Integration: Telegram Bot Token Config -->
+        <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-4 space-y-3 shadow-lg">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-700">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-100">
+              <span class="text-base">🤖</span>
+              <span>اتصال مستقیم به چت ربات تلگرام (Bot Mode)</span>
+            </div>
+            <span class="text-[10px] bg-blue-950 text-blue-400 border border-blue-800/50 px-2 py-0.5 rounded">اختیاری</span>
+          </div>
+
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            با وارد کردن Bot Token اختصاصی خود از @BotFather، می‌توانید تمام تحلیل‌ها را با ۱ کلیک به چت تلگرام خود ارسال کنید و حتی قابلیت پاسخگویی زنده در تلگرام را فعال نمایید.
+          </p>
+
+          <!-- Bot Token Input (LTR) -->
+          <div>
+            <label class="text-[11px] text-slate-300 font-medium block mb-1">توکن ربات تلگرام (Bot Token)</label>
+            <div class="relative">
+              <input id="inputBotToken" type="password" dir="ltr" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-left font-mono rounded-xl pr-3 pl-10 py-2 text-xs focus:border-blue-500 outline-none" placeholder="123456789:ABCdefGhIjk...">
+              <button id="btnToggleBotToken" type="button" class="absolute left-2.5 top-2 text-slate-400 hover:text-white p-0.5 text-xs">
+                👁️
+              </button>
+            </div>
+          </div>
+
+          <!-- Telegram Chat ID (Auto or Manual) -->
+          <div>
+            <label class="text-[11px] text-slate-300 font-medium block mb-1">شناسه چت کاربری شما (Telegram User / Chat ID)</label>
+            <input id="inputChatId" type="text" dir="ltr" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-left font-mono rounded-xl px-3 py-2 text-xs focus:border-blue-500 outline-none" placeholder="به صورت خودکار از تلگرام استخراج می‌شود">
+          </div>
+
+          <!-- Live Bot Polling Switch -->
+          <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 flex items-center justify-between">
+            <div class="space-y-0.5">
+              <span class="text-xs font-bold text-slate-100 block">حالت چت هوشمند تلگرام (Live Polling)</span>
+              <span class="text-[10px] text-slate-400 block">پاسخ خودکار ربات به پیام‌های ارسالی کاربر در پیوی تلگرام</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input id="toggleLiveBot" type="checkbox" class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+            </label>
+          </div>
+
+          <!-- Bot Actions -->
+          <div class="flex gap-2 pt-1">
+            <button id="btnTestBotToken" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-xl py-2 px-3 text-xs font-medium transition">
+              ⚡ تست اعتبار بات
+            </button>
+            <button id="btnSaveBotConfig" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-2 px-3 text-xs font-semibold shadow transition">
+              💾 ذخیره تنظیمات بات
+            </button>
+          </div>
+        </div>
+
+        <!-- Student Konkur Profile -->
+        <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-4 space-y-3 shadow-lg">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-700">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-100">
+              <span class="text-base">🎓</span>
+              <span>پروفایل کنکوری دانش‌آموز</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">رشته تحصیلی</label>
+              <select id="selectMajor" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl px-2.5 py-2 text-xs outline-none">
+                <option value="علوم تجربی">علوم تجربی</option>
+                <option value="ریاضی و فیزیک">ریاضی و فیزیک</option>
+                <option value="علوم انسانی">علوم انسانی</option>
+                <option value="هنر">هنر</option>
+                <option value="زبان‌های خارجی">زبان‌های خارجی</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">پایه تحصیلی</label>
+              <select id="selectGrade" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl px-2.5 py-2 text-xs outline-none">
+                <option value="پایه دوازدهم">پایه دوازدهم</option>
+                <option value="فارغ‌التحصیل / پشت کنکور">فارغ‌التحصیل / پشت کنکور</option>
+                <option value="پایه یازدهم">پایه یازدهم</option>
+                <option value="پایه دهم">پایه دهم</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">هدف و رشته دانشگاهی مورد نظر</label>
+            <input id="inputTarget" type="text" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 text-xs outline-none" placeholder="مثلاً: پزشکی دانشگاه تهران یا مهندسی کامپیوتر شریف">
+          </div>
+
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">نقاط ضعف اصلی و چالش‌ها (جهت برنامه هوشمند)</label>
+            <textarea id="inputWeaknesses" rows="2" class="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-xl p-2 text-xs outline-none resize-none" placeholder="مثلاً: کندخوانی زیست گیاهی، حل محاسبات فیزیک، تست‌های زماندار..."></textarea>
+          </div>
+
+          <button id="btnSaveProfile" class="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-2.5 px-3 text-xs font-semibold shadow transition">
+            💾 ذخیره مشخصات پروفایل
+          </button>
+        </div>
+
+        <!-- Storage & Reset Info -->
+        <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-3 text-center space-y-2">
+          <div class="text-[11px] text-slate-400" id="infoStorageText">محل ذخیره‌سازی داده‌ها: Telegram CloudStorage</div>
+          <button id="btnClearAllData" class="text-xs text-rose-400 hover:underline">
+            پاکسازی کلیه اطلاعات محلی و ابری
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Fixed Bottom Navigation Bar -->
+    <nav class="shrink-0 border-t border-slate-800 bg-slate-900/95 backdrop-blur flex justify-around items-center h-16 px-2 z-30">
+      <button class="nav-btn flex flex-col items-center justify-center flex-1 py-1.5 text-blue-400 font-bold transition" data-tab="tab-report">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+        <span class="text-[10px]">گزارش کار</span>
+      </button>
+
+      <button class="nav-btn flex flex-col items-center justify-center flex-1 py-1.5 text-slate-400 transition" data-tab="tab-planner">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+        </svg>
+        <span class="text-[10px]">برنامه‌ریزی</span>
+      </button>
+
+      <button class="nav-btn flex flex-col items-center justify-center flex-1 py-1.5 text-slate-400 transition" data-tab="tab-analytics">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+        <span class="text-[10px]">آمار و روند</span>
+      </button>
+
+      <button class="nav-btn flex flex-col items-center justify-center flex-1 py-1.5 text-slate-400 transition" data-tab="tab-settings">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+        <span class="text-[10px]">تنظیمات</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- Complete Modular JavaScript Application Logic -->
+  <script>
+    // ============================================================
+    // 1. Storage Bridge (Telegram CloudStorage with LocalStorage Fallback)
+    // ============================================================
+    const Storage = {
+      tg: window.Telegram?.WebApp,
+
+      isCloud() {
+        return !!(this.tg?.CloudStorage && this.tg.isVersionAtLeast?.('6.9'));
+      },
+
+      async setItem(key, value) {
+        const valStr = typeof value === 'string' ? value : JSON.stringify(value);
+        if (this.isCloud()) {
+          return new Promise((resolve) => {
+            this.tg.CloudStorage.setItem(key, valStr, (err) => {
+              localStorage.setItem(key, valStr);
+              resolve(!err);
+            });
+          });
+        }
+        localStorage.setItem(key, valStr);
+        return Promise.resolve(true);
+      },
+
+      async getItem(key) {
+        if (this.isCloud()) {
+          return new Promise((resolve) => {
+            this.tg.CloudStorage.getItem(key, (err, val) => {
+              if (err || !val) {
+                resolve(localStorage.getItem(key) || '');
+              } else {
+                localStorage.setItem(key, val);
+                resolve(val);
+              }
+            });
+          });
+        }
+        return Promise.resolve(localStorage.getItem(key) || '');
+      },
+
+      async removeItem(key) {
+        localStorage.removeItem(key);
+        if (this.isCloud()) {
+          return new Promise((resolve) => {
+            this.tg.CloudStorage.removeItem(key, () => resolve(true));
+          });
+        }
+        return Promise.resolve(true);
+      }
+    };
+
+    // ============================================================
+    // 2. Toast & Haptic Feedback Bridge
+    // ============================================================
+    const UI = {
+      haptic(type = 'impact', style = 'medium') {
+        try {
+          if (type === 'impact') window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(style);
+          if (type === 'notification') window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(style);
+          if (type === 'selection') window.Telegram?.WebApp?.HapticFeedback?.selectionChanged();
+        } catch (e) {}
+      },
+
+      toast(message, type = 'info', duration = 3500) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        const item = document.createElement('div');
+        item.className = 'toast-item';
+        let icon = 'ℹ️';
+        if (type === 'success') { icon = '✅'; this.haptic('notification', 'success'); }
+        if (type === 'error') { icon = '⚠️'; this.haptic('notification', 'error'); }
+        if (type === 'warning') { icon = '🔔'; this.haptic('notification', 'warning'); }
+        item.innerHTML = `<span>${icon}</span><span class="flex-1 leading-snug">${message}</span>`;
+        container.appendChild(item);
+        setTimeout(() => {
+          item.style.opacity = '0';
+          item.style.transform = 'translateY(-10px)';
+          item.style.transition = 'all 0.25s ease';
+          setTimeout(() => item.remove(), 250);
+        }, duration);
+      }
+    };
+
+    // ============================================================
+    // 3. Provider Presets & Default Configurations
+    // ============================================================
+    const PROVIDER_PRESETS = {
+      gemini: {
+        name: 'Google Gemini',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        defaultModel: 'gemini-2.5-flash',
+        isOpenAICompatible: false
+      },
+      openai: {
+        name: 'OpenAI (ChatGPT)',
+        baseUrl: 'https://api.openai.com/v1',
+        defaultModel: 'gpt-4o-mini',
+        isOpenAICompatible: true
+      },
+      openrouter: {
+        name: 'OpenRouter',
+        baseUrl: 'https://openrouter.ai/api/v1',
+        defaultModel: 'deepseek/deepseek-chat',
+        isOpenAICompatible: true
+      },
+      deepseek: {
+        name: 'DeepSeek',
+        baseUrl: 'https://api.deepseek.com/v1',
+        defaultModel: 'deepseek-chat',
+        isOpenAICompatible: true
+      },
+      groq: {
+        name: 'Groq',
+        baseUrl: 'https://api.groq.com/openai/v1',
+        defaultModel: 'llama-3.3-70b-versatile',
+        isOpenAICompatible: true
+      },
+      custom: {
+        name: 'Custom (OpenAI Compatible)',
+        baseUrl: 'https://api.example.com/v1',
+        defaultModel: 'gpt-4o-mini',
+        isOpenAICompatible: true
+      }
+    };
+
+    const ADVISOR_SYSTEM_INSTRUCTION = `تو یک مشاور تحصیلی ارشد، تحلیلگر داده و متخصص کنکور سراسری ایران هستی. لحن تو جدی، علمی، دقیق، دلسوز اما بدون تعارف و به دور از جملات انگیزشی زرد است. تو تفاوت مطالعه دروس مفهومی/حفظی (مثل زیست و شیمی) و حل‌کردنی (ریاضی و فیزیک) را به خوبی می‌دانی و تمام تحلیل‌هایت بر اساس داده‌های آماری دانش‌آموز، بازیابی فعال (Active Recall) و تست‌زنی زمان‌دار است.`;
+
+    // ============================================================
+    // 4. Universal AI Client Engine (callAI & fetchModels)
+    // ============================================================
+    const UniversalAI = {
+      async callAI({ provider, baseUrl, apiKey, model, prompt, jsonMode = false }) {
+        if (!apiKey) throw new Error('کلید API وارد نشده است. لطفاً به تب تنظیمات بروید.');
+        if (!model) throw new Error('نام مدل مشخص نشده است.');
+        const cleanBaseUrl = (baseUrl || '').trim().replace(/\/+$/, '');
+
+        // 1. Google Gemini Native Format
+        if (provider === 'gemini') {
+          const endpoint = `${cleanBaseUrl}/models/${model.trim()}:generateContent?key=${apiKey.trim()}`;
+          const payload = {
+            system_instruction: {
+              parts: [{ text: ADVISOR_SYSTEM_INSTRUCTION }]
+            },
+            contents: [
+              { parts: [{ text: prompt }] }
+            ],
+            generationConfig: {
+              temperature: 0.3,
+              ...(jsonMode ? { responseMimeType: "application/json" } : {})
+            }
+          };
+
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error?.message || `خطای Gemini (کد ${res.status})`);
+          }
+
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!text) throw new Error('پاسخی از مدل هوش مصنوعی دریافت نشد.');
+          return this.parseResponse(text, jsonMode);
+        }
+
+        // 2. OpenAI / OpenRouter / DeepSeek / Groq / Custom Standard Format
+        const endpoint = `${cleanBaseUrl}/chat/completions`;
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'HTTP-Referer': window.location.origin || 'https://t.me',
+          'X-Title': 'Konkur Smart Advisor TMA'
+        };
+
+        const body = {
+          model: model.trim(),
+          messages: [
+            { role: 'system', content: ADVISOR_SYSTEM_INSTRUCTION },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.3
+        };
+
+        if (jsonMode) {
+          body.response_format = { type: 'json_object' };
+        }
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error?.message || `خطای سرور هوش مصنوعی (کد ${res.status})`);
+        }
+
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (!text) throw new Error('پاسخی از مدل دریافت نشد.');
+        return this.parseResponse(text, jsonMode);
+      },
+
+      parseResponse(text, jsonMode) {
+        if (!jsonMode) return text;
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          // Attempt markdown code block extraction
+          const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+          if (match) {
+            return JSON.parse(match[1]);
+          }
+          throw new Error('قالب خروجی هوش مصنوعی نامعتبر بود. لطفاً دوباره تلاش کنید.');
+        }
+      },
+
+      async fetchModels(provider, baseUrl, apiKey) {
+        if (!apiKey) throw new Error('ابتدا کلید API را وارد کنید.');
+        const cleanBaseUrl = (baseUrl || '').trim().replace(/\/+$/, '');
+
+        if (provider === 'gemini') {
+          const endpoint = `${cleanBaseUrl}/models?key=${apiKey.trim()}`;
+          const res = await fetch(endpoint);
+          if (!res.ok) throw new Error('خطا در دریافت مدل‌های گوگل');
+          const data = await res.json();
+          return (data.models || [])
+            .map(m => m.name.replace(/^models\//, ''))
+            .filter(m => m.includes('gemini'));
+        }
+
+        const endpoint = `${cleanBaseUrl}/models`;
+        const res = await fetch(endpoint, {
+          headers: {
+            'Authorization': `Bearer ${apiKey.trim()}`
+          }
+        });
+        if (!res.ok) throw new Error('خطا در دریافت لیست مدل‌ها');
+        const data = await res.json();
+        const list = data.data || data.models || [];
+        return list.map(m => m.id || m.name).filter(Boolean);
+      }
+    };
+
+    // ============================================================
+    // 5. Telegram Bot API Bridge & Live Polling Engine
+    // ============================================================
+    const TelegramBotAPI = {
+      pollingActive: false,
+      lastUpdateId: 0,
+      pollAbortController: null,
+
+      async sendMessage(botToken, chatId, text) {
+        if (!botToken || !chatId) {
+          throw new Error('توکن ربات یا شناسه چت تنظیم نشده است.');
+        }
+        const endpoint = `https://api.telegram.org/bot${botToken.trim()}/sendMessage`;
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId.toString().trim(),
+            text: text,
+            parse_mode: 'HTML'
+          })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.description || 'ارسال پیام به تلگرام ناموفق بود.');
+        return data.result;
+      },
+
+      async testBot(botToken) {
+        if (!botToken) throw new Error('توکن ربات را وارد کنید.');
+        const res = await fetch(`https://api.telegram.org/bot${botToken.trim()}/getMe`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.description || 'توکن نامعتبر است.');
+        return data.result;
+      },
+
+      async sendChatAction(botToken, chatId, action = 'typing') {
+        try {
+          await fetch(`https://api.telegram.org/bot${botToken.trim()}/sendChatAction`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, action })
+          });
+        } catch (e) {}
+      },
+
+      startLivePolling(botToken) {
+        if (this.pollingActive) return;
+        this.pollingActive = true;
+        document.getElementById('liveBotHeaderBadge')?.classList.remove('hidden');
+        document.getElementById('liveBotHeaderBadge')?.classList.add('flex');
+        UI.toast('حالت چت زنده با ربات فعال شد. پیام‌های تلگرام به صورت هوشمند پاسخ داده می‌شوند.', 'success');
+        this.pollLoop(botToken);
+      },
+
+      stopLivePolling() {
+        this.pollingActive = false;
+        if (this.pollAbortController) {
+          this.pollAbortController.abort();
+          this.pollAbortController = null;
+        }
+        document.getElementById('liveBotHeaderBadge')?.classList.add('hidden');
+        document.getElementById('liveBotHeaderBadge')?.classList.remove('flex');
+        UI.toast('حالت چت زنده با ربات متوقف شد.', 'info');
+      },
+
+      async pollLoop(botToken) {
+        while (this.pollingActive) {
+          try {
+            this.pollAbortController = new AbortController();
+            const url = `https://api.telegram.org/bot${botToken.trim()}/getUpdates?offset=${this.lastUpdateId}&timeout=15`;
+            const res = await fetch(url, { signal: this.pollAbortController.signal });
+            const data = await res.json();
+
+            if (data.ok && Array.isArray(data.result)) {
+              for (const update of data.result) {
+                this.lastUpdateId = update.update_id + 1;
+                const msg = update.message;
+                if (msg && msg.text && msg.chat?.id) {
+                  // Process user question in bot chat
+                  await this.handleIncomingMessage(botToken, msg.chat.id, msg.text, msg.from?.first_name);
+                }
+              }
+            }
+          } catch (e) {
+            if (e.name === 'AbortError') break;
+            await new Promise(r => setTimeout(r, 3500)); // wait on network error
+          }
+        }
+      },
+
+      async handleIncomingMessage(botToken, chatId, text, userName) {
+        await this.sendChatAction(botToken, chatId, 'typing');
+        try {
+          const aiPrompt = `پیام ارسالی دانش‌آموز (${userName || 'داوطلب'}):
+"${text}"
+
+پاسخ صریح، علمی و مشاوره‌ای خود را به صورت پیام متنی روان، دقیق و بدون تعارف به او ارائه بده:`;
+
+          const reply = await UniversalAI.callAI({
+            provider: AppState.ai.provider,
+            baseUrl: AppState.ai.baseUrl,
+            apiKey: AppState.ai.apiKey,
+            model: AppState.ai.model,
+            prompt: aiPrompt,
+            jsonMode: false
+          });
+
+          await this.sendMessage(botToken, chatId, `🎓 <b>پاسخ مشاور هوشمند:</b>\n\n${reply}`);
+        } catch (err) {
+          await this.sendMessage(botToken, chatId, `⚠️ خطا در پردازش هوش مصنوعی:\n${err.message}`);
+        }
+      }
+    };
+
+    // ============================================================
+    // 6. Global State Management
+    // ============================================================
+    const AppState = {
+      activeTab: 'tab-report',
+      ai: {
+        provider: 'gemini',
+        baseUrl: PROVIDER_PRESETS.gemini.baseUrl,
+        apiKey: '',
+        model: PROVIDER_PRESETS.gemini.defaultModel
+      },
+      bot: {
+        token: '',
+        chatId: '',
+        livePolling: false
+      },
+      profile: {
+        major: 'علوم تجربی',
+        grade: 'پایه دوازدهم',
+        target: '',
+        weaknesses: ''
+      },
+      history: [],
+      planner: {
+        strategy: '',
+        tasks: []
+      },
+      latestAnalysisText: ''
+    };
+
+    // ============================================================
+    // 7. Date & Number Formatting Utilities
+    // ============================================================
+    const Format = {
+      toPersian(n) {
+        if (n === null || n === undefined) return '۰';
+        const d = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+        return n.toString().replace(/\d/g, x => d[x]);
+      },
+      getJalaliDate() {
+        try {
+          return new Intl.DateTimeFormat('fa-IR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+        } catch (e) { return 'امروز'; }
+      },
+      getShortDate(iso) {
+        try {
+          return new Intl.DateTimeFormat('fa-IR', { weekday: 'short', day: 'numeric' }).format(new Date(iso));
+        } catch (e) { return 'روز'; }
+      }
+    };
+
+    // ============================================================
+    // 8. Application UI Renderers
+    // ============================================================
+    const Render = {
+      initHeader() {
+        document.getElementById('dateDisplay').textContent = Format.getJalaliDate();
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (tgUser) {
+          AppState.bot.chatId = AppState.bot.chatId || tgUser.id.toString();
+          document.getElementById('inputChatId').value = AppState.bot.chatId;
+          document.getElementById('headerSubtitle').textContent = `${tgUser.first_name || 'کاربر'} | ${AppState.profile.major}`;
+        } else {
+          document.getElementById('headerSubtitle').textContent = AppState.profile.major;
+        }
+
+        const badge = document.getElementById('headerProviderBadge');
+        badge.textContent = PROVIDER_PRESETS[AppState.ai.provider]?.name.split(' ')[0] || 'AI';
+
+        const cloudBadgeText = document.getElementById('cloudBadgeText');
+        if (Storage.isCloud()) {
+          cloudBadgeText.textContent = 'TG Cloud';
+          document.getElementById('infoStorageText').textContent = 'محل ذخیره‌سازی: Telegram.WebApp.CloudStorage (Serverless)';
+        } else {
+          cloudBadgeText.textContent = 'Local';
+          document.getElementById('infoStorageText').textContent = 'محل ذخیره‌سازی: LocalStorage (حالت مرورگر)';
+        }
+      },
+
+      analysis(data) {
+        document.getElementById('resultHours').textContent = Format.toPersian(data.hours || 0);
+        document.getElementById('resultTests').textContent = Format.toPersian(data.total_tests || 0);
+        document.getElementById('resultAccuracy').textContent = `${Format.toPersian(Math.round(data.accuracy || 0))}٪`;
+
+        document.getElementById('analysisSpeed').textContent = data.critique.speed;
+        document.getElementById('analysisBalance').textContent = data.critique.balance;
+        document.getElementById('analysisOverall').textContent = data.critique.overall;
+
+        const list = document.getElementById('analysisActions');
+        list.innerHTML = '';
+        (data.critique.actions || []).forEach((act, idx) => {
+          const li = document.createElement('li');
+          li.className = 'flex items-start gap-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 text-slate-200';
+          li.innerHTML = `
+            <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">
+              ${Format.toPersian(idx + 1)}
+            </span>
+            <span class="leading-relaxed">${act}</span>
+          `;
+          list.appendChild(li);
+        });
+
+        // Store formatted text for telegram bot message
+        AppState.latestAnalysisText = `📊 <b>گزارش کار و تحلیل علمی مشاور:</b>\n` +
+          `▫️ درس: ${data.subject || 'عمومی'}\n` +
+          `▫️ ساعت مطالعه: ${data.hours} ساعت\n` +
+          `▫️ تست کل: ${data.total_tests} (درست: ${data.correct_tests} | غلط: ${data.wrong_tests})\n` +
+          `▫️ درصد: ${Math.round(data.accuracy)}%\n\n` +
+          `⚡ <b>سرعت و کندخوانی:</b>\n${data.critique.speed}\n\n` +
+          `⚖️ <b>تعادل تئوری و تست:</b>\n${data.critique.balance}\n\n` +
+          `🎯 <b>اقدامات اصلاحی فردا:</b>\n` +
+          (data.critique.actions || []).map((a, i) => `${i+1}. ${a}`).join('\n');
+
+        document.getElementById('analysisCard').classList.remove('hidden');
+        document.getElementById('analysisCard').scrollIntoView({ behavior: 'smooth' });
+      },
+
+      planner() {
+        const container = document.getElementById('plannerTasksList');
+        const empty = document.getElementById('plannerEmpty');
+        const stratBox = document.getElementById('plannerStrategyBox');
+        const bar = document.getElementById('plannerProgressBar');
+        const text = document.getElementById('plannerProgressText');
+
+        if (AppState.planner.strategy) {
+          stratBox.classList.remove('hidden');
+          stratBox.innerHTML = `<strong>💡 استراتژی روز مشاور:</strong> ${AppState.planner.strategy}`;
+        } else {
+          stratBox.classList.add('hidden');
+        }
+
+        const tasks = AppState.planner.tasks || [];
+        if (tasks.length === 0) {
+          container.innerHTML = '';
+          if (empty) container.appendChild(empty);
+          empty?.classList.remove('hidden');
+          bar.style.width = '0%';
+          text.textContent = '۰٪ (۰ از ۰)';
+          return;
+        }
+
+        empty?.classList.add('hidden');
+        container.innerHTML = '';
+
+        let doneCount = 0;
+        tasks.forEach((task) => {
+          if (task.done) doneCount++;
+
+          const card = document.createElement('div');
+          card.className = `bg-slate-800/80 border border-slate-700/80 rounded-2xl p-3.5 flex items-start gap-3 transition ${task.done ? 'opacity-50' : ''}`;
+
+          const chk = document.createElement('input');
+          chk.type = 'checkbox';
+          chk.className = 'plan-checkbox mt-0.5';
+          chk.checked = !!task.done;
+          chk.addEventListener('change', () => {
+            task.done = chk.checked;
+            UI.haptic('impact', 'medium');
+            Storage.setItem('tma_planner_data', AppState.planner);
+            Render.planner();
+          });
+
+          const body = document.createElement('div');
+          body.className = 'flex-1 space-y-1';
+          body.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold ${task.done ? 'line-through text-slate-400' : 'text-slate-100'}">${task.subject}</span>
+              <span class="text-[10px] text-purple-400 font-mono bg-purple-950/40 border border-purple-800/40 px-1.5 py-0.5 rounded">${task.ebbinghaus || 'ابینگهاوس'}</span>
+            </div>
+            <p class="text-xs text-slate-300 font-medium ${task.done ? 'line-through text-slate-500' : ''}">${task.topic}</p>
+            <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1">
+              <span>⏱️ ${Format.toPersian(task.duration || 60)} دقیقه | 🎯 ${Format.toPersian(task.target_tests || 20)} تست</span>
+              <span class="text-cyan-400 font-mono">${task.method || 'بازیابی فعال'}</span>
+            </div>
+          `;
+
+          card.appendChild(chk);
+          card.appendChild(body);
+          container.appendChild(card);
+        });
+
+        const pct = Math.round((doneCount / tasks.length) * 100);
+        bar.style.width = `${pct}%`;
+        text.textContent = `${Format.toPersian(pct)}٪ (${Format.toPersian(doneCount)}/${Format.toPersian(tasks.length)})`;
+      },
+
+      analytics() {
+        const hist = AppState.history || [];
+        let totalHours = 0;
+        let totalTests = 0;
+        let totalCorrect = 0;
+
+        hist.forEach(h => {
+          totalHours += Number(h.hours || 0);
+          totalTests += Number(h.total_tests || 0);
+          totalCorrect += Number(h.correct_tests || 0);
+        });
+
+        const avgHours = hist.length > 0 ? (totalHours / hist.length).toFixed(1) : 0;
+        const avgTests = hist.length > 0 ? Math.round(totalTests / hist.length) : 0;
+        const accuracy = totalTests > 0 ? Math.round((totalCorrect / totalTests) * 100) : 0;
+
+        document.getElementById('statTotalHours').innerHTML = `${Format.toPersian(totalHours.toFixed(1))} <span class="text-xs font-normal text-slate-400">ساعت</span>`;
+        document.getElementById('statAvgHours').textContent = `میانگین: ${Format.toPersian(avgHours)} ساعت`;
+
+        document.getElementById('statTotalTests').innerHTML = `${Format.toPersian(totalTests)} <span class="text-xs font-normal text-slate-400">تست</span>`;
+        document.getElementById('statAvgTests').textContent = `میانگین: ${Format.toPersian(avgTests)} تست`;
+
+        document.getElementById('statAvgAccuracy').textContent = `${Format.toPersian(accuracy)}٪`;
+        document.getElementById('statStreak').innerHTML = `${Format.toPersian(hist.length)} <span class="text-xs font-normal text-slate-400">روز</span>`;
+
+        // Render Bars
+        const chart = document.getElementById('chartBars');
+        const labels = document.getElementById('chartLabels');
+        chart.innerHTML = '';
+        labels.innerHTML = '';
+
+        if (hist.length === 0) {
+          chart.innerHTML = '<div class="w-full text-center text-xs text-slate-500 my-auto">هنوز گزارشی ثبت نشده است</div>';
+        } else {
+          const recent = hist.slice(-7);
+          const maxH = Math.max(...recent.map(r => Number(r.hours || 0)), 5);
+
+          recent.forEach(r => {
+            const h = Number(r.hours || 0);
+            const heightPct = Math.max(Math.min(Math.round((h / maxH) * 100), 100), 10);
+
+            const col = document.createElement('div');
+            col.className = 'flex-1 flex flex-col items-center gap-1 h-full justify-end';
+
+            const num = document.createElement('span');
+            num.className = 'text-[9px] font-mono text-cyan-400';
+            num.textContent = Format.toPersian(h);
+
+            const bar = document.createElement('div');
+            bar.className = 'w-full max-w-[28px] bg-gradient-to-t from-blue-600 to-cyan-400 rounded-t-md transition-all duration-300';
+            bar.style.height = `${heightPct}%`;
+
+            col.appendChild(num);
+            col.appendChild(bar);
+            chart.appendChild(col);
+
+            const lbl = document.createElement('div');
+            lbl.className = 'flex-1 text-center font-mono';
+            lbl.textContent = Format.getShortDate(r.date);
+            labels.appendChild(lbl);
+          });
+        }
+
+        // Render History Items
+        const hContainer = document.getElementById('historyContainer');
+        const countBadge = document.getElementById('historyCountBadge');
+        countBadge.textContent = `${Format.toPersian(hist.length)} مورد`;
+        hContainer.innerHTML = '';
+
+        if (hist.length === 0) {
+          hContainer.innerHTML = '<div class="text-center text-slate-500 py-3">تاریخچه‌ای موجود نیست.</div>';
+        } else {
+          [...hist].reverse().forEach((item, index) => {
+            const realIdx = hist.length - 1 - index;
+            const det = document.createElement('details');
+            det.className = 'bg-slate-900 border border-slate-700/80 rounded-xl p-2.5';
+            det.innerHTML = `
+              <summary class="cursor-pointer list-none flex items-center justify-between font-semibold">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-cyan-400 font-mono text-[11px]">${Format.getShortDate(item.date)}:</span>
+                  <span class="text-slate-200 text-xs">${item.subject || 'مطالعه'}</span>
+                  <span class="text-[10px] bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded font-mono">${Format.toPersian(item.hours)}h</span>
+                  <span class="text-[10px] bg-slate-800 text-purple-400 px-1.5 py-0.5 rounded font-mono">${Format.toPersian(item.total_tests)} تست</span>
+                </div>
+                <button data-del="${realIdx}" class="btn-del-history text-[11px] text-rose-400 hover:text-rose-300 px-1.5 py-0.5">🗑️</button>
+              </summary>
+              <div class="pt-2.5 mt-2 border-t border-slate-800 text-[11px] text-slate-300 leading-relaxed space-y-1.5">
+                <div><strong>نقد صریح:</strong> ${item.critique?.overall || 'ثبت نشده'}</div>
+                <div><strong>اقدامات اصلاحی:</strong>
+                  <ul class="list-disc pr-4 text-emerald-400 mt-1">
+                    ${(item.critique?.actions || []).map(a => `<li>${a}</li>`).join('')}
+                  </ul>
+                </div>
+              </div>
+            `;
+            hContainer.appendChild(det);
+          });
+
+          // Delete buttons
+          hContainer.querySelectorAll('.btn-del-history').forEach(b => {
+            b.addEventListener('click', (e) => {
+              e.preventDefault();
+              const idx = parseInt(b.getAttribute('data-del'), 10);
+              if (confirm('این گزارش از تاریخچه حذف شود؟')) {
+                AppState.history.splice(idx, 1);
+                Storage.setItem('tma_history_records', AppState.history);
+                Render.analytics();
+                UI.toast('گزارش حذف شد.', 'info');
+              }
+            });
+          });
+        }
+      },
+
+      settings() {
+        document.getElementById('selectProvider').value = AppState.ai.provider;
+        document.getElementById('inputBaseUrl').value = AppState.ai.baseUrl;
+        document.getElementById('inputApiKey').value = AppState.ai.apiKey;
+        document.getElementById('inputModelName').value = AppState.ai.model;
+
+        document.getElementById('inputBotToken').value = AppState.bot.token;
+        document.getElementById('inputChatId').value = AppState.bot.chatId;
+        document.getElementById('toggleLiveBot').checked = AppState.bot.livePolling;
+
+        document.getElementById('selectMajor').value = AppState.profile.major;
+        document.getElementById('selectGrade').value = AppState.profile.grade;
+        document.getElementById('inputTarget').value = AppState.profile.target;
+        document.getElementById('inputWeaknesses').value = AppState.profile.weaknesses;
+      }
+    };
+
+    // ============================================================
+    // 9. Event Listeners & Core Controller
+    // ============================================================
+    function setupAppEvents() {
+      // Bottom Tabs
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.getAttribute('data-tab');
+          if (tab === AppState.activeTab) return;
+
+          UI.haptic('selection');
+          document.querySelectorAll('.nav-btn').forEach(b => {
+            b.classList.remove('text-blue-400', 'font-bold');
+            b.classList.add('text-slate-400');
+          });
+          btn.classList.add('text-blue-400', 'font-bold');
+          btn.classList.remove('text-slate-400');
+
+          document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+          document.getElementById(tab)?.classList.remove('hidden');
+          AppState.activeTab = tab;
+
+          if (tab === 'tab-planner') Render.planner();
+          if (tab === 'tab-analytics') Render.analytics();
+          if (tab === 'tab-settings') Render.settings();
+        });
+      });
+
+      // Provider Preset Change
+      document.getElementById('selectProvider')?.addEventListener('change', (e) => {
+        const val = e.target.value;
+        const preset = PROVIDER_PRESETS[val];
+        if (preset) {
+          AppState.ai.provider = val;
+          document.getElementById('inputBaseUrl').value = preset.baseUrl;
+          document.getElementById('inputModelName').value = preset.defaultModel;
+          document.getElementById('selectFetchedModel').classList.add('hidden');
+          UI.haptic('selection');
+        }
+      });
+
+      // Fetch Models Button
+      document.getElementById('btnFetchModels')?.addEventListener('click', async () => {
+        const provider = document.getElementById('selectProvider').value;
+        const baseUrl = document.getElementById('inputBaseUrl').value;
+        const apiKey = document.getElementById('inputApiKey').value;
+        const btn = document.getElementById('btnFetchModels');
+
+        btn.textContent = 'در حال استعلام...';
+        btn.disabled = true;
+
+        try {
+          const models = await UniversalAI.fetchModels(provider, baseUrl, apiKey);
+          const sel = document.getElementById('selectFetchedModel');
+          sel.innerHTML = '<option value="">-- یک مدل را انتخاب کنید --</option>';
+          models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            sel.appendChild(opt);
+          });
+          sel.classList.remove('hidden');
+          UI.toast(`تعداد ${models.length} مدل فعال دریافت شد.`, 'success');
+        } catch (err) {
+          UI.toast(`خطا در استعلام مدل‌ها: ${err.message}`, 'error');
+        } finally {
+          btn.textContent = '🔄 استعلام خودکار مدل‌ها';
+          btn.disabled = false;
+        }
+      });
+
+      document.getElementById('selectFetchedModel')?.addEventListener('change', (e) => {
+        if (e.target.value) {
+          document.getElementById('inputModelName').value = e.target.value;
+          UI.haptic('selection');
+        }
+      });
+
+      // Toggle Passwords
+      document.getElementById('btnToggleApiKey')?.addEventListener('click', () => {
+        const input = document.getElementById('inputApiKey');
+        input.type = input.type === 'password' ? 'text' : 'password';
+      });
+
+      document.getElementById('btnToggleBotToken')?.addEventListener('click', () => {
+        const input = document.getElementById('inputBotToken');
+        input.type = input.type === 'password' ? 'text' : 'password';
+      });
+
+      // Test AI Connection
+      document.getElementById('btnTestAI')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btnTestAI');
+        btn.disabled = true;
+        btn.textContent = 'در حال تست...';
+
+        try {
+          const res = await UniversalAI.callAI({
+            provider: document.getElementById('selectProvider').value,
+            baseUrl: document.getElementById('inputBaseUrl').value,
+            apiKey: document.getElementById('inputApiKey').value,
+            model: document.getElementById('inputModelName').value,
+            prompt: 'پاسخ کوتاه بده: ارتباط موفقیت‌آمیز است.',
+            jsonMode: false
+          });
+          UI.toast(`اتصال هوش مصنوعی برقرار شد: ${res.substring(0, 40)}...`, 'success');
+        } catch (err) {
+          UI.toast(`خطا در تست هوش مصنوعی: ${err.message}`, 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '⚡ تست اتصال هوش مصنوعی';
+        }
+      });
+
+      // Save AI Settings
+      document.getElementById('btnSaveAI')?.addEventListener('click', async () => {
+        AppState.ai = {
+          provider: document.getElementById('selectProvider').value,
+          baseUrl: document.getElementById('inputBaseUrl').value.trim(),
+          apiKey: document.getElementById('inputApiKey').value.trim(),
+          model: document.getElementById('inputModelName').value.trim()
+        };
+        await Storage.setItem('tma_ai_settings', AppState.ai);
+        Render.initHeader();
+        UI.toast('تنظیمات هوش مصنوعی ذخیره گردید.', 'success');
+      });
+
+      // Test Bot Token
+      document.getElementById('btnTestBotToken')?.addEventListener('click', async () => {
+        const token = document.getElementById('inputBotToken').value.trim();
+        const btn = document.getElementById('btnTestBotToken');
+        btn.disabled = true;
+        btn.textContent = 'در حال تست...';
+
+        try {
+          const botInfo = await TelegramBotAPI.testBot(token);
+          UI.toast(`ربات متصل شد: @${botInfo.username} (${botInfo.first_name})`, 'success');
+        } catch (err) {
+          UI.toast(`خطا در بات: ${err.message}`, 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '⚡ تست اعتبار بات';
+        }
+      });
+
+      // Save Bot Config
+      document.getElementById('btnSaveBotConfig')?.addEventListener('click', async () => {
+        AppState.bot.token = document.getElementById('inputBotToken').value.trim();
+        AppState.bot.chatId = document.getElementById('inputChatId').value.trim();
+        await Storage.setItem('tma_bot_settings', AppState.bot);
+        UI.toast('تنظیمات ربات تلگرام ذخیره شد.', 'success');
+      });
+
+      // Live Bot Polling Toggle
+      document.getElementById('toggleLiveBot')?.addEventListener('change', async (e) => {
+        const checked = e.target.checked;
+        const token = document.getElementById('inputBotToken').value.trim();
+        if (checked) {
+          if (!token) {
+            UI.toast('لطفاً ابتدا توکن ربات تلگرام را وارد کنید.', 'error');
+            e.target.checked = false;
+            return;
+          }
+          AppState.bot.token = token;
+          AppState.bot.livePolling = true;
+          await Storage.setItem('tma_bot_settings', AppState.bot);
+          TelegramBotAPI.startLivePolling(token);
+        } else {
+          AppState.bot.livePolling = false;
+          await Storage.setItem('tma_bot_settings', AppState.bot);
+          TelegramBotAPI.stopLivePolling();
+        }
+      });
+
+      // Save Profile
+      document.getElementById('btnSaveProfile')?.addEventListener('click', async () => {
+        AppState.profile = {
+          major: document.getElementById('selectMajor').value,
+          grade: document.getElementById('selectGrade').value,
+          target: document.getElementById('inputTarget').value.trim(),
+          weaknesses: document.getElementById('inputWeaknesses').value.trim()
+        };
+        await Storage.setItem('tma_student_profile', AppState.profile);
+        Render.initHeader();
+        UI.toast('مشخصات کنکوری دانش‌آموز ذخیره شد.', 'success');
+      });
+
+      // Sample Report Fill
+      document.getElementById('btnSampleFill')?.addEventListener('click', () => {
+        document.getElementById('inputSubject').value = 'زیست‌شناسی';
+        document.getElementById('inputTopic').value = 'فصل گردش مواد در انسان (قلب)';
+        document.getElementById('inputHours').value = '3.5';
+        document.getElementById('inputTotalTests').value = '50';
+        document.getElementById('inputCorrectTests').value = '38';
+        document.getElementById('inputWrongTests').value = '10';
+        document.getElementById('inputReportText').value = 'روی شکل دریچه‌های قلب و الکتروکاردیوگرام تست‌های زماندار زدم. در تحلیل تست‌ها متوجه شدم در مفاهیم قیدهای همیشه و اغلب اشتباه داشتم.';
+        UI.haptic('impact', 'light');
+      });
+
+      // Analyze Daily Report
+      document.getElementById('btnAnalyze')?.addEventListener('click', async () => {
+        const subject = document.getElementById('inputSubject').value.trim() || 'دروس برنامه';
+        const topic = document.getElementById('inputTopic').value.trim();
+        const hours = parseFloat(document.getElementById('inputHours').value) || 0;
+        const total = parseInt(document.getElementById('inputTotalTests').value, 10) || 0;
+        const correct = parseInt(document.getElementById('inputCorrectTests').value, 10) || 0;
+        const wrong = parseInt(document.getElementById('inputWrongTests').value, 10) || 0;
+        const notes = document.getElementById('inputReportText').value.trim();
+
+        if (hours === 0 && !notes) {
+          UI.toast('لطفاً ساعت مطالعه یا شرح گزارش کار امروز را وارد کنید.', 'warning');
+          return;
+        }
+
+        if (!AppState.ai.apiKey) {
+          UI.toast('ابتدا کلید API را در تب تنظیمات وارد کنید.', 'error');
+          document.querySelector('[data-tab="tab-settings"]')?.click();
+          return;
+        }
+
+        const btn = document.getElementById('btnAnalyze');
+        const btnText = document.getElementById('btnAnalyzeText');
+        const btnIcon = document.getElementById('btnAnalyzeIcon');
+
+        btn.disabled = true;
+        btnText.textContent = 'در حال تحلیل علمی با هوش مصنوعی...';
+        btnIcon.classList.add('spin-loader');
+        UI.haptic('impact', 'heavy');
+
+        const prompt = `
+گزارش مطالعه امروز دانش‌آموز کنکوری:
+- رشته: ${AppState.profile.major} | پایه: ${AppState.profile.grade}
+- هدف تحصیلی: ${AppState.profile.target || 'رتبه برتر'}
+- نقاط ضعف قبلی: ${AppState.profile.weaknesses || 'نامشخص'}
+- درس مطالعه‌شده: ${subject} (${topic || 'مبحث کلی'})
+- ساعت مطالعه: ${hours} ساعت
+- آمار تست‌ها: کل: ${total} | درست: ${correct} | غلط: ${wrong}
+- یادداشت و شرح دانش‌آموز: "${notes || 'ندارد'}"
+
+خلاصه ۵ روز قبل دانش‌آموز:
+${JSON.stringify(AppState.history.slice(-5))}
+
+دستورالعمل: یک شیء JSON با ساختار زیر صادر کن (بدون هیچ متن اضافی خارج از JSON):
+{
+  "speed": "تحلیل علمی سرعت مطالعه و نشانه‌های کندخوانی با استناد به ساعات و تست‌ها",
+  "balance": "بررسی نسبت یادگیری تشریحی به حل تست و میزان بهره‌گیری از Active Recall",
+  "overall": "نقد صریح، بدون تعارف و دقیق بر کیفیت روز",
+  "actions": ["اقدام ۱ برای فردا", "اقدام ۲ برای فردا", "اقدام ۳ برای فردا"]
+}
+`;
+
+        try {
+          const critique = await UniversalAI.callAI({
+            provider: AppState.ai.provider,
+            baseUrl: AppState.ai.baseUrl,
+            apiKey: AppState.ai.apiKey,
+            model: AppState.ai.model,
+            prompt,
+            jsonMode: true
+          });
+
+          const accuracy = total > 0 ? (correct / total) * 100 : 0;
+          const reportRecord = {
+            id: `rep_${Date.now()}`,
+            date: new Date().toISOString(),
+            subject,
+            topic,
+            hours,
+            total_tests: total,
+            correct_tests: correct,
+            wrong_tests: wrong,
+            accuracy,
+            critique
+          };
+
+          AppState.history.push(reportRecord);
+          await Storage.setItem('tma_history_records', AppState.history);
+
+          Render.analysis(reportRecord);
+          UI.toast('تحلیل علمی با موفقیت صادر و ذخیره شد.', 'success');
+        } catch (err) {
+          UI.toast(`خطا در تحلیل: ${err.message}`, 'error');
+        } finally {
+          btn.disabled = false;
+          btnText.textContent = 'ثبت و تحلیل علمی با هوش مصنوعی';
+          btnIcon.classList.remove('spin-loader');
+        }
+      });
+
+      // Send Report to Bot Chat
+      document.getElementById('btnSendReportToBot')?.addEventListener('click', async () => {
+        if (!AppState.latestAnalysisText) {
+          UI.toast('ابتدا گزارشی را تحلیل کنید.', 'warning');
+          return;
+        }
+
+        if (AppState.bot.token && AppState.bot.chatId) {
+          try {
+            await TelegramBotAPI.sendMessage(AppState.bot.token, AppState.bot.chatId, AppState.latestAnalysisText);
+            UI.toast('تحلیل به پیوی ربات تلگرام ارسال شد! 📩', 'success');
+          } catch (e) {
+            UI.toast(`خطا در ارسال: ${e.message}`, 'error');
+          }
+        } else if (window.Telegram?.WebApp?.sendData) {
+          window.Telegram.WebApp.sendData(AppState.latestAnalysisText);
+          UI.toast('داده‌ها به تلگرام ارسال شد.', 'success');
+        } else {
+          navigator.clipboard.writeText(AppState.latestAnalysisText.replace(/<[^>]*>?/gm, ''));
+          UI.toast('متن تحلیل در کلیپ‌بورد کپی شد (توکن ربات در تنظیمات ست نشده است).', 'info');
+        }
+      });
+
+      // Generate Study Plan
+      document.getElementById('btnGeneratePlan')?.addEventListener('click', async () => {
+        if (!AppState.ai.apiKey) {
+          UI.toast('کلید API در تنظیمات تنظیم نشده است.', 'error');
+          document.querySelector('[data-tab="tab-settings"]')?.click();
+          return;
+        }
+
+        const btn = document.getElementById('btnGeneratePlan');
+        const btnText = document.getElementById('btnPlanText');
+        const btnIcon = document.getElementById('btnPlanIcon');
+
+        btn.disabled = true;
+        btnText.textContent = 'محاسبه ابینگهاوس...';
+        btnIcon.classList.add('spin-loader');
+        UI.haptic('impact', 'heavy');
+
+        const prompt = `
+دانش‌آموز کنکوری:
+- رشته: ${AppState.profile.major} | پایه: ${AppState.profile.grade}
+- هدف: ${AppState.profile.target || 'رتبه زیر ۱۰۰۰'}
+- چالش‌ها: ${AppState.profile.weaknesses || 'عدم تمرکز و مرور ناقص'}
+- گزارش‌های اخیر: ${JSON.stringify(AppState.history.slice(-3))}
+
+وظیفه:
+بر اساس منحنی فراموشی ابینگهاوس (Ebbinghaus) و اصل بازیابی فعال (Active Recall)، یک برنامه مطالعاتی ۴ الی ۵ باکسی برای فردا صادر کن.
+پاسخ دقیقاً یک شیء JSON با ساختار زیر باشد:
+{
+  "strategy": "توصیه استراتژیک اصلی برای فردا",
+  "tasks": [
+    {
+      "id": "t1",
+      "subject": "زیست‌شناسی",
+      "topic": "مرور ۲۴ ساعت گذشته مبحث قلب با تست نشان‌دار",
+      "duration": 90,
+      "target_tests": 25,
+      "method": "Active Recall و فلش‌کارت",
+      "ebbinghaus": "مرور ۲۴ ساعته",
+      "done": false
+    }
+  ]
+}
+`;
+
+        try {
+          const res = await UniversalAI.callAI({
+            provider: AppState.ai.provider,
+            baseUrl: AppState.ai.baseUrl,
+            apiKey: AppState.ai.apiKey,
+            model: AppState.ai.model,
+            prompt,
+            jsonMode: true
+          });
+
+          AppState.planner = {
+            strategy: res.strategy || '',
+            tasks: (res.tasks || []).map(t => ({ ...t, done: false }))
+          };
+
+          await Storage.setItem('tma_planner_data', AppState.planner);
+          Render.planner();
+          UI.toast('برنامه هوشمند فردا صادر شد.', 'success');
+        } catch (err) {
+          UI.toast(`خطا در صدور برنامه: ${err.message}`, 'error');
+        } finally {
+          btn.disabled = false;
+          btnText.textContent = 'صدور برنامه فردا';
+          btnIcon.classList.remove('spin-loader');
+        }
+      });
+
+      // Add Manual Task
+      document.getElementById('btnManualTaskAdd')?.addEventListener('click', () => {
+        const inp = document.getElementById('inputManualTask');
+        const val = inp.value.trim();
+        if (!val) return;
+
+        AppState.planner.tasks.push({
+          id: `custom_${Date.now()}`,
+          subject: 'تسک دستی',
+          topic: val,
+          duration: 60,
+          target_tests: 15,
+          method: 'حل تمرین و تست',
+          ebbinghaus: 'فوری',
+          done: false
+        });
+
+        Storage.setItem('tma_planner_data', AppState.planner);
+        inp.value = '';
+        Render.planner();
+        UI.toast('تسک به چک‌لیست اضافه شد.', 'success');
+      });
+
+      // Send Plan to Bot
+      document.getElementById('btnSendPlanToBot')?.addEventListener('click', async () => {
+        const tasks = AppState.planner.tasks || [];
+        if (tasks.length === 0) {
+          UI.toast('هنوز برنامه‌ای صادر نشده است.', 'warning');
+          return;
+        }
+
+        const planText = `📋 <b>برنامه هوشمند مطالعه فردا:</b>\n` +
+          `💡 <i>${AppState.planner.strategy || 'اجرای دقیق با تمرکز کامل'}</i>\n\n` +
+          tasks.map((t, i) => `${i+1}. <b>${t.subject}</b>: ${t.topic}\n⏱️ ${t.duration} دقیقه | 🎯 ${t.target_tests} تست (${t.ebbinghaus})`).join('\n\n');
+
+        if (AppState.bot.token && AppState.bot.chatId) {
+          try {
+            await TelegramBotAPI.sendMessage(AppState.bot.token, AppState.bot.chatId, planText);
+            UI.toast('برنامه روز به پیوی تلگرام ارسال شد! 📩', 'success');
+          } catch (e) {
+            UI.toast(`خطا در ارسال: ${e.message}`, 'error');
+          }
+        } else {
+          navigator.clipboard.writeText(planText.replace(/<[^>]*>?/gm, ''));
+          UI.toast('برنامه در کلیپ‌بورد کپی شد (توکن ربات را در تنظیمات وارد کنید).', 'info');
+        }
+      });
+
+      // Clear All Data
+      document.getElementById('btnClearAllData')?.addEventListener('click', async () => {
+        if (confirm('آیا مطمئن هستید؟ کلیه تاریخچه، تنظیمات و کلیدهای ذخیره شده پاک خواهند شد.')) {
+          await Storage.removeItem('tma_ai_settings');
+          await Storage.removeItem('tma_bot_settings');
+          await Storage.removeItem('tma_student_profile');
+          await Storage.removeItem('tma_history_records');
+          await Storage.removeItem('tma_planner_data');
+          location.reload();
+        }
+      });
+    }
+
+    // ============================================================
+    // 10. Bootstrap Application
+    // ============================================================
+    async function bootstrapApp() {
+      // 1. Init Telegram WebApp
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+        window.Telegram.WebApp.enableClosingConfirmation?.();
+      }
+
+      // 2. Load Persisted Storage
+      try {
+        const rawAi = await Storage.getItem('tma_ai_settings');
+        if (rawAi) AppState.ai = { ...AppState.ai, ...JSON.parse(rawAi) };
+
+        const rawBot = await Storage.getItem('tma_bot_settings');
+        if (rawBot) AppState.bot = { ...AppState.bot, ...JSON.parse(rawBot) };
+
+        const rawProfile = await Storage.getItem('tma_student_profile');
+        if (rawProfile) AppState.profile = { ...AppState.profile, ...JSON.parse(rawProfile) };
+
+        const rawHistory = await Storage.getItem('tma_history_records');
+        if (rawHistory) AppState.history = JSON.parse(rawHistory);
+
+        const rawPlanner = await Storage.getItem('tma_planner_data');
+        if (rawPlanner) AppState.planner = JSON.parse(rawPlanner);
+      } catch (e) {
+        console.warn('Storage bootstrap warning:', e);
+      }
+
+      // 3. Render Initial State
+      Render.initHeader();
+      Render.settings();
+      Render.planner();
+      Render.analytics();
+      setupAppEvents();
+
+      // 4. Restart Live Polling if was active
+      if (AppState.bot.livePolling && AppState.bot.token) {
+        TelegramBotAPI.startLivePolling(AppState.bot.token);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootstrapApp);
+    } else {
+      bootstrapApp();
+    }
+  </script>
+</body>
+</html>
